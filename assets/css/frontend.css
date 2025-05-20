@@ -1,0 +1,14 @@
+#nexlifyscroll-top {
+    position: fixed;
+    opacity: 0;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50%;
+    border: none;
+    z-index: 9999;
+    transition: opacity 0.3s;
+}
+#nexlifyscroll-top img {
+    width: 30px;
+    height: 30px;
+}
