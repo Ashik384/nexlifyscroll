@@ -7,45 +7,121 @@ document.addEventListener('DOMContentLoaded', () => {
     gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
     const settings = window.nexlifyscrollSettings || {};
-    if (settings.scrollTop && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        const button = document.querySelector('#nexlifyscroll-top');
-        if (button) {
-            button.addEventListener('click', () => {
-                gsap.to(window, {
-                    scrollTo: { y: 0 },
-                    duration: settings.duration,
-                    ease: settings.easing
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        // Scroll-to-top functionality
+        if (settings.scrollTop) {
+            const button = document.querySelector('#nexlifyscroll-top');
+            if (button) {
+                button.addEventListener('click', () => {
+                    gsap.to(window, {
+                        scrollTo: { y: 0 },
+                        duration: settings.duration,
+                        ease: settings.easing
+                    });
                 });
-            });
-            gsap.to(button, {
-                opacity: 1,
-                duration: 0.3,
-                scrollTrigger: {
-                    trigger: document.body,
-                    start: 'top -200',
-                    end: 'top -100',
-                    toggleActions: 'play none none reverse',
+                gsap.to(button, {
+                    opacity: 1,
+                    duration: 0.3,
+                    scrollTrigger: {
+                        trigger: document.body,
+                        start: 'top -200',
+                        end: 'top -100',
+                        toggleActions: 'play none none reverse',
+                    }
+                });
+
+                if (settings.progressBarEnabled) {
+                    const icon = button.querySelector('.nexlifyscroll-icon');
+                    if (icon) {
+                        gsap.to(icon, {
+                            '--progress-angle': 100,
+                            scrollTrigger: {
+                                trigger: document.body,
+                                start: 'top top',
+                                end: 'bottom bottom',
+                                scrub: 0.1,
+                                onUpdate: self => {
+                                    const progress = self.progress * 100;
+                                    icon.style.setProperty('--progress-angle', progress);
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        // Smooth scroll functionality
+        if (settings.smoothScrollEnabled) {
+            let currentScroll = window.scrollY;
+            let targetScroll = currentScroll;
+            let velocity = 0;
+
+            // Normalize wheel delta across browsers
+            const normalizeWheel = (event) => {
+                let delta = 0;
+                if (event.deltaY) {
+                    delta = event.deltaY;
+                } else if (event.detail) {
+                    delta = event.detail * -40;
+                }
+                // Apply wheelMultiplier
+                return delta * settings.smoothScrollWheelMultiplier;
+            };
+
+            // Handle wheel events
+            window.addEventListener('wheel', (event) => {
+                event.preventDefault();
+                const delta = normalizeWheel(event);
+                targetScroll += delta;
+                targetScroll = Math.max(0, Math.min(targetScroll, document.body.scrollHeight - window.innerHeight));
+            }, { passive: false });
+
+            // Handle keyboard events (Page Up/Down, Arrow Up/Down)
+            window.addEventListener('keydown', (event) => {
+                if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown'].includes(event.key)) {
+                    event.preventDefault();
+                    const step = 300 * settings.smoothScrollWheelMultiplier;
+                    if (event.key === 'ArrowUp' || event.key === 'PageUp') {
+                        targetScroll -= step;
+                    } else if (event.key === 'ArrowDown' || event.key === 'PageDown') {
+                        targetScroll += step;
+                    }
+                    targetScroll = Math.max(0, Math.min(targetScroll, document.body.scrollHeight - window.innerHeight));
                 }
             });
 
-            if (settings.progressBarEnabled) {
-                const icon = button.querySelector('.nexlifyscroll-icon');
-                if (icon) {
-                    gsap.to(icon, {
-                        '--progress-angle': 100,
-                        scrollTrigger: {
-                            trigger: document.body,
-                            start: 'top top',
-                            end: 'bottom bottom',
-                            scrub: 0.5,
-                            onUpdate: self => {
-                                const progress = self.progress * 100;
-                                icon.style.setProperty('--progress-angle', progress);
-                            }
-                        }
-                    });
+            // Smooth scroll update loop using GSAP ticker
+            gsap.ticker.add(() => {
+                // Linear interpolation: current = current + (target - current) * lerp
+                currentScroll += (targetScroll - currentScroll) * settings.smoothScrollLerp;
+                // Apply easing to velocity for smoother stops
+                velocity = (targetScroll - currentScroll) * settings.smoothScrollLerp;
+                window.scrollTo(0, Math.round(currentScroll));
+
+                // Update ScrollTrigger for any GSAP animations
+                ScrollTrigger.update();
+            });
+
+            // Sync with GSAP ScrollTrigger
+            ScrollTrigger.scrollerProxy(document.body, {
+                scrollTop(value) {
+                    if (arguments.length) {
+                        targetScroll = value;
+                        currentScroll = value;
+                        window.scrollTo(0, value);
+                    }
+                    return currentScroll;
+                },
+                getBoundingClientRect() {
+                    return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
                 }
-            }
+            });
+
+            // Update ScrollTrigger on scroll
+            window.addEventListener('scroll', () => {
+                ScrollTrigger.update();
+            });
         }
     }
 });

@@ -19,13 +19,18 @@ class NexlifyScroll_Settings {
         register_setting('nexlifyscroll_options', 'nexlifyscroll_options', [$this, 'sanitize_options']);
         add_settings_section('nexlifyscroll_main', __('Main Settings', 'nexlifyscroll'), null, 'nexlifyscroll');
         add_settings_field('scroll_top_enabled', __('Enable Scroll to Top', 'nexlifyscroll'), [$this, 'render_scroll_top_field'], 'nexlifyscroll', 'nexlifyscroll_main');
-        add_settings_field('duration', __('Scroll Duration (seconds)', 'nexlifyscroll'), [$this, 'render_duration_field'], 'nexlifyscroll', 'nexlifyscroll_main');
-        add_settings_field('easing', __('Scroll Easing', 'nexlifyscroll'), [$this, 'render_easing_field'], 'nexlifyscroll', 'nexlifyscroll_main');
+        add_settings_field('duration', __('Scroll to Top Duration (seconds)', 'nexlifyscroll'), [$this, 'render_duration_field'], 'nexlifyscroll', 'nexlifyscroll_main');
+        add_settings_field('easing', __('Scroll to Top Easing', 'nexlifyscroll'), [$this, 'render_easing_field'], 'nexlifyscroll', 'nexlifyscroll_main');
         add_settings_field('button_color', __('Button Color', 'nexlifyscroll'), [$this, 'render_button_color_field'], 'nexlifyscroll', 'nexlifyscroll_main');
         add_settings_field('button_icon', __('Button Icon', 'nexlifyscroll'), [$this, 'render_button_icon_field'], 'nexlifyscroll', 'nexlifyscroll_main');
         add_settings_field('button_position', __('Button Position', 'nexlifyscroll'), [$this, 'render_button_position_field'], 'nexlifyscroll', 'nexlifyscroll_main');
         add_settings_field('progress_bar_enabled', __('Enable Progress Bar', 'nexlifyscroll'), [$this, 'render_progress_bar_enabled_field'], 'nexlifyscroll', 'nexlifyscroll_main');
         add_settings_field('progress_bar_color', __('Progress Bar Color', 'nexlifyscroll'), [$this, 'render_progress_bar_color_field'], 'nexlifyscroll', 'nexlifyscroll_main');
+        add_settings_field('smooth_scroll_enabled', __('Enable MouseWheel Smooth Scroll', 'nexlifyscroll'), [$this, 'render_smooth_scroll_enabled_field'], 'nexlifyscroll', 'nexlifyscroll_main');
+        add_settings_field('smooth_scroll_lerp', __('Smooth Scroll Lerp (0-1)', 'nexlifyscroll'), [$this, 'render_smooth_scroll_lerp_field'], 'nexlifyscroll', 'nexlifyscroll_main');
+        add_settings_field('smooth_scroll_duration', __('Smooth Scroll Duration (seconds)', 'nexlifyscroll'), [$this, 'render_smooth_scroll_duration_field'], 'nexlifyscroll', 'nexlifyscroll_main');
+        add_settings_field('smooth_scroll_wheel_multiplier', __('Smooth Scroll Wheel Multiplier', 'nexlifyscroll'), [$this, 'render_smooth_scroll_wheel_multiplier_field'], 'nexlifyscroll', 'nexlifyscroll_main');
+        add_settings_field('smooth_scroll_easing', __('Smooth Scroll Easing', 'nexlifyscroll'), [$this, 'render_smooth_scroll_easing_field'], 'nexlifyscroll', 'nexlifyscroll_main');
     }
 
     public function render_settings_page() {
@@ -139,6 +144,54 @@ class NexlifyScroll_Settings {
         <?php
     }
 
+    public function render_smooth_scroll_enabled_field() {
+        $options = get_option('nexlifyscroll_options', []);
+        ?>
+        <input type="checkbox" name="nexlifyscroll_options[smooth_scroll_enabled]" value="1" <?php checked(1, !empty($options['smooth_scroll_enabled'])); ?>>
+        <?php
+    }
+
+    public function render_smooth_scroll_lerp_field() {
+        $options = get_option('nexlifyscroll_options', []);
+        $lerp = $options['smooth_scroll_lerp'] ?? 0.1;
+        ?>
+        <input type="number" step="0.01" min="0" max="1" name="nexlifyscroll_options[smooth_scroll_lerp]" value="<?php echo esc_attr($lerp); ?>">
+        <p class="description"><?php _e('Linear interpolation intensity (0-1). Lower values make scrolling smoother.', 'nexlifyscroll'); ?></p>
+        <?php
+    }
+
+    public function render_smooth_scroll_duration_field() {
+        $options = get_option('nexlifyscroll_options', []);
+        $duration = $options['smooth_scroll_duration'] ?? 1.2;
+        ?>
+        <input type="number" step="0.1" min="0.1" max="5" name="nexlifyscroll_options[smooth_scroll_duration]" value="<?php echo esc_attr($duration); ?>">
+        <p class="description"><?php _e('Duration of scroll animation (seconds). Used for anchor scrolls.', 'nexlifyscroll'); ?></p>
+        <?php
+    }
+
+    public function render_smooth_scroll_wheel_multiplier_field() {
+        $options = get_option('nexlifyscroll_options', []);
+        $multiplier = $options['smooth_scroll_wheel_multiplier'] ?? 1;
+        ?>
+        <input type="number" step="0.1" min="0.1" max="5" name="nexlifyscroll_options[smooth_scroll_wheel_multiplier]" value="<?php echo esc_attr($multiplier); ?>">
+        <p class="description"><?php _e('Multiplier for mouse wheel events. Higher values scroll faster.', 'nexlifyscroll'); ?></p>
+        <?php
+    }
+
+    public function render_smooth_scroll_easing_field() {
+        $options = get_option('nexlifyscroll_options', []);
+        $easing = $options['smooth_scroll_easing'] ?? 'power2.out';
+        ?>
+        <select name="nexlifyscroll_options[smooth_scroll_easing]">
+            <option value="power2.out" <?php selected($easing, 'power2.out'); ?>>Power2.out</option>
+            <option value="power1.inOut" <?php selected($easing, 'power1.inOut'); ?>>Power1.inOut</option>
+            <option value="expo.out" <?php selected($easing, 'expo.out'); ?>>Expo.out</option>
+            <option value="linear" <?php selected($easing, 'linear'); ?>>Linear</option>
+        </select>
+        <p class="description"><?php _e('Easing function for anchor scrolls.', 'nexlifyscroll'); ?></p>
+        <?php
+    }
+
     public function sanitize_options($input) {
         $sanitized = [];
         $sanitized['scroll_top_enabled'] = !empty($input['scroll_top_enabled']) ? 1 : 0;
@@ -149,6 +202,11 @@ class NexlifyScroll_Settings {
         $sanitized['button_position'] = sanitize_text_field($input['button_position'] ?? 'bottom-right');
         $sanitized['progress_bar_enabled'] = !empty($input['progress_bar_enabled']) ? 1 : 0;
         $sanitized['progress_bar_color'] = sanitize_hex_color($input['progress_bar_color'] ?? '#ff0000');
+        $sanitized['smooth_scroll_enabled'] = !empty($input['smooth_scroll_enabled']) ? 1 : 0;
+        $sanitized['smooth_scroll_lerp'] = floatval($input['smooth_scroll_lerp'] ?? 0.1);
+        $sanitized['smooth_scroll_duration'] = floatval($input['smooth_scroll_duration'] ?? 1.2);
+        $sanitized['smooth_scroll_wheel_multiplier'] = floatval($input['smooth_scroll_wheel_multiplier'] ?? 1);
+        $sanitized['smooth_scroll_easing'] = sanitize_text_field($input['smooth_scroll_easing'] ?? 'power2.out');
         return $sanitized;
     }
 }
