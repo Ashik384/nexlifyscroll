@@ -27,6 +27,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     toggleActions: 'play none none reverse',
                 }
             });
+
+            if (settings.progressBarEnabled) {
+                const icon = button.querySelector('.nexlifyscroll-icon');
+                if (icon) {
+                    gsap.to(icon, {
+                        '--progress-angle': 100,
+                        scrollTrigger: {
+                            trigger: document.body,
+                            start: 'top top',
+                            end: 'bottom bottom',
+                            scrub: 0.5,
+                            onUpdate: self => {
+                                const progress = self.progress * 100;
+                                icon.style.setProperty('--progress-angle', progress);
+                            }
+                        }
+                    });
+                }
+            }
         }
     }
 });

@@ -19,7 +19,9 @@ class NexlifyScroll_Frontend {
                 'easing' => $options['easing'] ?? 'power2.out',
                 'buttonColor' => $options['button_color'] ?? '#000000',
                 'buttonIcon' => !empty($options['button_icon']) ? wp_get_attachment_url($options['button_icon']) : NEXLIFYSCROLL_URL . 'assets/images/default-icon.png',
-                'buttonPosition' => $options['button_position'] ?? 'bottom-right'
+                'buttonPosition' => $options['button_position'] ?? 'bottom-right',
+                'progressBarEnabled' => !empty($options['progress_bar_enabled']),
+                'progressBarColor' => $options['progress_bar_color'] ?? '#ff0000'
             ]);
         }
     }
