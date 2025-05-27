@@ -51,11 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Smooth scroll functionality
-        if (settings.smoothScrollEnabled) {
+        // Smooth scroll and anchor link functionality
+        if (settings.smoothScrollEnabled || settings.anchorScrollEnabled) {
             let currentScroll = window.scrollY;
             let targetScroll = currentScroll;
             let velocity = 0;
+            let isAnimating = false;
 
             // Normalize wheel delta across browsers
             const normalizeWheel = (event) => {
@@ -65,43 +66,94 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (event.detail) {
                     delta = event.detail * -40;
                 }
-                // Apply wheelMultiplier
                 return delta * settings.smoothScrollWheelMultiplier;
             };
 
             // Handle wheel events
             window.addEventListener('wheel', (event) => {
                 event.preventDefault();
-                const delta = normalizeWheel(event);
-                targetScroll += delta;
-                targetScroll = Math.max(0, Math.min(targetScroll, document.body.scrollHeight - window.innerHeight));
+                if (!isAnimating) {
+                    const delta = normalizeWheel(event);
+                    targetScroll += delta;
+                    targetScroll = Math.max(0, Math.min(targetScroll, document.body.scrollHeight - window.innerHeight));
+                }
             }, { passive: false });
 
             // Handle keyboard events (Page Up/Down, Arrow Up/Down)
             window.addEventListener('keydown', (event) => {
                 if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown'].includes(event.key)) {
                     event.preventDefault();
-                    const step = 300 * settings.smoothScrollWheelMultiplier;
-                    if (event.key === 'ArrowUp' || event.key === 'PageUp') {
-                        targetScroll -= step;
-                    } else if (event.key === 'ArrowDown' || event.key === 'PageDown') {
-                        targetScroll += step;
+                    if (!isAnimating) {
+                        const step = 300 * settings.smoothScrollWheelMultiplier;
+                        if (event.key === 'ArrowUp' || event.key === 'PageUp') {
+                            targetScroll -= step;
+                        } else if (event.key === 'ArrowDown' || event.key === 'PageDown') {
+                            targetScroll += step;
+                        }
+                        targetScroll = Math.max(0, Math.min(targetScroll, document.body.scrollHeight - window.innerHeight));
                     }
-                    targetScroll = Math.max(0, Math.min(targetScroll, document.body.scrollHeight - window.innerHeight));
                 }
             });
 
             // Smooth scroll update loop using GSAP ticker
-            gsap.ticker.add(() => {
-                // Linear interpolation: current = current + (target - current) * lerp
-                currentScroll += (targetScroll - currentScroll) * settings.smoothScrollLerp;
-                // Apply easing to velocity for smoother stops
-                velocity = (targetScroll - currentScroll) * settings.smoothScrollLerp;
-                window.scrollTo(0, Math.round(currentScroll));
+            if (settings.smoothScrollEnabled) {
+                gsap.ticker.add(() => {
+                    if (!isAnimating) {
+                        currentScroll += (targetScroll - currentScroll) * settings.smoothScrollLerp;
+                        velocity = (targetScroll - currentScroll) * settings.smoothScrollLerp;
+                        window.scrollTo(0, Math.round(currentScroll));
+                    }
+                    ScrollTrigger.update();
+                });
+            } else {
+                gsap.ticker.add(() => {
+                    if (!isAnimating) {
+                        window.scrollTo(0, Math.round(targetScroll));
+                    }
+                    ScrollTrigger.update();
+                });
+            }
 
-                // Update ScrollTrigger for any GSAP animations
-                ScrollTrigger.update();
-            });
+            // Anchor Link Smooth Scrolling
+            if (settings.anchorScrollEnabled) {
+                try {
+                    const links = document.querySelectorAll(settings.linkSelectors);
+                    links.forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            const hash = link.getAttribute('href').split('#')[1];
+                            const target = document.getElementById(hash);
+                            if (target && !e.defaultPrevented) {
+                                e.preventDefault();
+                                isAnimating = true;
+                                let dynamicOffset = 0;
+                                if (settings.dynamicOffsetSelector) {
+                                    const offsetElement = document.querySelector(settings.dynamicOffsetSelector);
+                                    dynamicOffset = offsetElement ? offsetElement.getBoundingClientRect().height : 0;
+                                    console.log('Dynamic Offset Height:', dynamicOffset);
+                                }
+                                const effectiveOffset = dynamicOffset > 0 ? dynamicOffset : (settings.scrollOffset || 0);
+                                console.log('Effective Offset:', effectiveOffset); // Debug log
+                                const targetPosition = target.getBoundingClientRect().top + window.scrollY - effectiveOffset;
+                                console.log('Target Position:', targetPosition); // Debug log
+                                gsap.to(window, {
+                                    scrollTo: { y: targetPosition, autoKill: true },
+                                    duration: settings.animationDuration,
+                                    ease: settings.easingFunction,
+                                    onComplete: () => {
+                                        isAnimating = false;
+                                        targetScroll = targetPosition;
+                                        currentScroll = targetPosition;
+                                        window.location.hash = hash;
+                                        target.focus({ preventScroll: true });
+                                    }
+                                });
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.warn('NexlifyScroll: Invalid link selector for anchor links.', error);
+                }
+            }
 
             // Sync with GSAP ScrollTrigger
             ScrollTrigger.scrollerProxy(document.body, {
@@ -118,7 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Update ScrollTrigger on scroll
             window.addEventListener('scroll', () => {
                 ScrollTrigger.update();
             });

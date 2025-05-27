@@ -58,3 +58,9 @@
     bottom: 20px;
     left: 20px;
 }
+
+/* Accessibility focus style for anchor link targets */
+:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
