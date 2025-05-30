@@ -7,7 +7,7 @@ class NexlifyScroll_Frontend {
 
     public function enqueue_scripts() {
         $options = get_option('nexlifyscroll_options', []);
-        if (!empty($options['scroll_top_enabled']) || !empty($options['smooth_scroll_enabled']) || !empty($options['anchor_scroll_enabled'])) {
+        if (!empty($options['scroll_top_enabled']) || !empty($options['smooth_scroll_enabled'])) {
             wp_enqueue_script('gsap', NEXLIFYSCROLL_URL . 'assets/js/lib/gsap.min.js', [], '3.13.0', true);
             wp_enqueue_script('gsap-scrolltrigger', NEXLIFYSCROLL_URL . 'assets/js/lib/ScrollTrigger.min.js', ['gsap'], '3.13.0', true);
             wp_enqueue_script('gsap-scrollto', NEXLIFYSCROLL_URL . 'assets/js/lib/ScrollToPlugin.min.js', ['gsap'], '3.13.0', true);
@@ -27,12 +27,6 @@ class NexlifyScroll_Frontend {
                 'smoothScrollDuration' => $options['smooth_scroll_duration'] ?? 1.2,
                 'smoothScrollWheelMultiplier' => $options['smooth_scroll_wheel_multiplier'] ?? 1,
                 'smoothScrollEasing' => $options['smooth_scroll_easing'] ?? 'power2.out',
-                'anchorScrollEnabled' => !empty($options['anchor_scroll_enabled']),
-                'linkSelectors' => $options['link_selectors'] ?? 'a[href*=\'#\']:not([href=\'#\'])',
-                'animationDuration' => $options['animation_duration'] ?? 0.8,
-                'easingFunction' => $options['easing_function'] ?? 'power2.out',
-                'scrollOffset' => $options['scroll_offset'] ?? 0,
-                'dynamicOffsetSelector' => $options['dynamic_offset_selector'] ?? ''
             ]);
         }
     }

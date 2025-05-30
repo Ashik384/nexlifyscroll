@@ -5,8 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
-
     const settings = window.nexlifyscrollSettings || {};
+
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         // Scroll-to-top functionality
         if (settings.scrollTop) {
@@ -51,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Smooth scroll and anchor link functionality
-        if (settings.smoothScrollEnabled || settings.anchorScrollEnabled) {
+        // Smooth Scroll Functionality
+        if (settings.smoothScrollEnabled) {
             let currentScroll = window.scrollY;
             let targetScroll = currentScroll;
             let velocity = 0;
@@ -96,83 +96,31 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // Smooth scroll update loop using GSAP ticker
-            if (settings.smoothScrollEnabled) {
-                gsap.ticker.add(() => {
-                    if (!isAnimating) {
-                        currentScroll += (targetScroll - currentScroll) * settings.smoothScrollLerp;
-                        velocity = (targetScroll - currentScroll) * settings.smoothScrollLerp;
-                        window.scrollTo(0, Math.round(currentScroll));
-                    }
-                    ScrollTrigger.update();
-                });
-            } else {
-                gsap.ticker.add(() => {
-                    if (!isAnimating) {
-                        window.scrollTo(0, Math.round(targetScroll));
-                    }
-                    ScrollTrigger.update();
-                });
-            }
-
-            // Anchor Link Smooth Scrolling
-            if (settings.anchorScrollEnabled) {
-                try {
-                    const links = document.querySelectorAll(settings.linkSelectors);
-                    links.forEach(link => {
-                        link.addEventListener('click', (e) => {
-                            const hash = link.getAttribute('href').split('#')[1];
-                            const target = document.getElementById(hash);
-                            if (target && !e.defaultPrevented) {
-                                e.preventDefault();
-                                isAnimating = true;
-                                let dynamicOffset = 0;
-                                if (settings.dynamicOffsetSelector) {
-                                    const offsetElement = document.querySelector(settings.dynamicOffsetSelector);
-                                    dynamicOffset = offsetElement ? offsetElement.getBoundingClientRect().height : 0;
-                                    console.log('Dynamic Offset Height:', dynamicOffset);
-                                }
-                                const effectiveOffset = dynamicOffset > 0 ? dynamicOffset : (settings.scrollOffset || 0);
-                                console.log('Effective Offset:', effectiveOffset); // Debug log
-                                const targetPosition = target.getBoundingClientRect().top + window.scrollY - effectiveOffset;
-                                console.log('Target Position:', targetPosition); // Debug log
-                                gsap.to(window, {
-                                    scrollTo: { y: targetPosition, autoKill: true },
-                                    duration: settings.animationDuration,
-                                    ease: settings.easingFunction,
-                                    onComplete: () => {
-                                        isAnimating = false;
-                                        targetScroll = targetPosition;
-                                        currentScroll = targetPosition;
-                                        window.location.hash = hash;
-                                        target.focus({ preventScroll: true });
-                                    }
-                                });
-                            }
-                        });
-                    });
-                } catch (error) {
-                    console.warn('NexlifyScroll: Invalid link selector for anchor links.', error);
+            gsap.ticker.add(() => {
+                if (!isAnimating) {
+                    currentScroll += (targetScroll - currentScroll) * settings.smoothScrollLerp;
+                    velocity = (targetScroll - currentScroll) * settings.smoothScrollLerp;
+                    window.scrollTo(0, Math.round(currentScroll));
                 }
-            }
-
-            // Sync with GSAP ScrollTrigger
-            ScrollTrigger.scrollerProxy(document.body, {
-                scrollTop(value) {
-                    if (arguments.length) {
-                        targetScroll = value;
-                        currentScroll = value;
-                        window.scrollTo(0, value);
-                    }
-                    return currentScroll;
-                },
-                getBoundingClientRect() {
-                    return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
-                }
-            });
-
-            window.addEventListener('scroll', () => {
                 ScrollTrigger.update();
             });
         }
+
+        // Sync with GSAP ScrollTrigger (shared for both features)
+        ScrollTrigger.scrollerProxy(document.body, {
+            scrollTop(value) {
+                if (arguments.length) {
+                    window.scrollTo(0, value);
+                }
+                return window.scrollY;
+            },
+            getBoundingClientRect() {
+                return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+            }
+        });
+
+        window.addEventListener('scroll', () => {
+            ScrollTrigger.update();
+        });
     }
 });

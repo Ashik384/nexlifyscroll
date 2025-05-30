@@ -31,15 +31,6 @@ class NexlifyScroll_Settings {
         add_settings_field('smooth_scroll_duration', __('Smooth Scroll Duration (seconds)', 'nexlifyscroll'), [$this, 'render_smooth_scroll_duration_field'], 'nexlifyscroll', 'nexlifyscroll_main');
         add_settings_field('smooth_scroll_wheel_multiplier', __('Smooth Scroll Wheel Multiplier', 'nexlifyscroll'), [$this, 'render_smooth_scroll_wheel_multiplier_field'], 'nexlifyscroll', 'nexlifyscroll_main');
         add_settings_field('smooth_scroll_easing', __('Smooth Scroll Easing', 'nexlifyscroll'), [$this, 'render_smooth_scroll_easing_field'], 'nexlifyscroll', 'nexlifyscroll_main');
-
-        // Anchor Link Smooth Scrolling Section
-        add_settings_section('nexlifyscroll_anchor', __('Anchor Link Smooth Scrolling', 'nexlifyscroll'), null, 'nexlifyscroll');
-        add_settings_field('anchor_scroll_enabled', __('Enable Anchor Link Smooth Scrolling', 'nexlifyscroll'), [$this, 'render_anchor_scroll_enabled_field'], 'nexlifyscroll', 'nexlifyscroll_anchor');
-        add_settings_field('link_selectors', __('Link Selector(s)', 'nexlifyscroll'), [$this, 'render_link_selectors_field'], 'nexlifyscroll', 'nexlifyscroll_anchor');
-        add_settings_field('animation_duration', __('Animation Duration (seconds)', 'nexlifyscroll'), [$this, 'render_animation_duration_field'], 'nexlifyscroll', 'nexlifyscroll_anchor');
-        add_settings_field('easing_function', __('Easing Function', 'nexlifyscroll'), [$this, 'render_easing_function_field'], 'nexlifyscroll', 'nexlifyscroll_anchor');
-        add_settings_field('scroll_offset', __('Scroll Offset (pixels)', 'nexlifyscroll'), [$this, 'render_scroll_offset_field'], 'nexlifyscroll', 'nexlifyscroll_anchor');
-        add_settings_field('dynamic_offset_selector', __('Dynamic Offset Selector', 'nexlifyscroll'), [$this, 'render_dynamic_offset_selector_field'], 'nexlifyscroll', 'nexlifyscroll_anchor');
     }
 
     public function render_settings_page() {
@@ -201,64 +192,6 @@ class NexlifyScroll_Settings {
         <?php
     }
 
-    // Anchor Link Smooth Scrolling Render Methods
-    public function render_anchor_scroll_enabled_field() {
-        $options = get_option('nexlifyscroll_options', []);
-        ?>
-        <input type="checkbox" name="nexlifyscroll_options[anchor_scroll_enabled]" value="1" <?php checked(1, !empty($options['anchor_scroll_enabled'])); ?>>
-        <p class="description"><?php _e('Enable smooth scrolling for anchor links (e.g., <code><a href="#section"></code>).', 'nexlifyscroll'); ?></p>
-        <?php
-    }
-
-    public function render_link_selectors_field() {
-        $options = get_option('nexlifyscroll_options', []);
-        $value = $options['link_selectors'] ?? 'a[href*=\'#\']:not([href=\'#\'])';
-        ?>
-        <input type="text" name="nexlifyscroll_options[link_selectors]" value="<?php echo esc_attr($value); ?>" class="regular-text">
-        <p class="description"><?php _e('CSS selector(s) for links to trigger smooth scrolling (e.g., <code>a[href*=\'#\']:not([href=\'#\'])</code>). Use commas for multiple selectors.', 'nexlifyscroll'); ?></p>
-        <?php
-    }
-
-    public function render_animation_duration_field() {
-        $options = get_option('nexlifyscroll_options', []);
-        $value = $options['animation_duration'] ?? 0.8;
-        ?>
-        <input type="number" step="0.1" min="0.3" max="1.5" name="nexlifyscroll_options[animation_duration]" value="<?php echo esc_attr($value); ?>" class="small-text">
-        <p class="description"><?php _e('Duration of the scroll animation in seconds (e.g., 0.8 for 800ms).', 'nexlifyscroll'); ?></p>
-        <?php
-    }
-
-    public function render_easing_function_field() {
-        $options = get_option('nexlifyscroll_options', []);
-        $value = $options['easing_function'] ?? 'power2.out';
-        ?>
-        <select name="nexlifyscroll_options[easing_function]" class="regular-text">
-            <option value="power2.out" <?php selected($value, 'power2.out'); ?>>Power2.out</option>
-            <option value="power1.inOut" <?php selected($value, 'power1.inOut'); ?>>Power1.inOut</option>
-            <option value="expo.out" <?php selected($value, 'expo.out'); ?>>Expo.out</option>
-        </select>
-        <p class="description"><?php _e('Easing function for the scroll animation (e.g., <code>power2.out</code> for smooth easing).', 'nexlifyscroll'); ?></p>
-        <?php
-    }
-
-    public function render_scroll_offset_field() {
-        $options = get_option('nexlifyscroll_options', []);
-        $value = $options['scroll_offset'] ?? 0;
-        ?>
-        <input type="number" step="10" min="0" max="150" name="nexlifyscroll_options[scroll_offset]" value="<?php echo esc_attr($value); ?>" class="small-text">
-        <p class="description"><?php _e('Static offset in pixels for fixed headers (e.g., 80px).', 'nexlifyscroll'); ?></p>
-        <?php
-    }
-
-    public function render_dynamic_offset_selector_field() {
-        $options = get_option('nexlifyscroll_options', []);
-        $value = $options['dynamic_offset_selector'] ?? '';
-        ?>
-        <input type="text" name="nexlifyscroll_options[dynamic_offset_selector]" value="<?php echo esc_attr($value); ?>" class="regular-text">
-        <p class="description"><?php _e('CSS selector for a dynamic offset element (e.g., <code>#header</code>). The height of this element will be used as the offset. Leave blank to use static offset.', 'nexlifyscroll'); ?></p>
-        <?php
-    }
-
     public function sanitize_options($input) {
         $sanitized = [];
         $sanitized['scroll_top_enabled'] = !empty($input['scroll_top_enabled']) ? 1 : 0;
@@ -274,14 +207,6 @@ class NexlifyScroll_Settings {
         $sanitized['smooth_scroll_duration'] = floatval($input['smooth_scroll_duration'] ?? 1.2);
         $sanitized['smooth_scroll_wheel_multiplier'] = floatval($input['smooth_scroll_wheel_multiplier'] ?? 1);
         $sanitized['smooth_scroll_easing'] = sanitize_text_field($input['smooth_scroll_easing'] ?? 'power2.out');
-
-        // Anchor Link Smooth Scrolling Sanitization
-        $sanitized['anchor_scroll_enabled'] = !empty($input['anchor_scroll_enabled']) ? 1 : 0;
-        $sanitized['link_selectors'] = sanitize_text_field($input['link_selectors'] ?? 'a[href*=\'#\']:not([href=\'#\'])');
-        $sanitized['animation_duration'] = max(0.3, min(1.5, floatval($input['animation_duration'] ?? 0.8)));
-        $sanitized['easing_function'] = in_array($input['easing_function'] ?? 'power2.out', ['power2.out', 'power1.inOut', 'expo.out']) ? $input['easing_function'] : 'power2.out';
-        $sanitized['scroll_offset'] = max(0, min(150, intval($input['scroll_offset'] ?? 0)));
-        $sanitized['dynamic_offset_selector'] = sanitize_text_field($input['dynamic_offset_selector'] ?? '');
 
         return $sanitized;
     }
